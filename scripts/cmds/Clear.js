@@ -3,30 +3,40 @@ module.exports = {
     name: "clear",
     version: "1.0",
     author: "Samy x GPT",
-    role: 0,
-    shortDescription: "Supprimer les derniers messages (admin)",
+    role: 2, // réservé à l’admin
+    shortDescription: "🧹 Supprime tous les messages du bot dans le groupe",
     category: "admin",
     guide: {
-      en: "clear <nombre>"
+      en: ".clear"
     }
   },
 
-  onStart: async function ({ api, event, args }) {
-    const allowedUID = "61566160637367"; // Ton ID uniquement
-    if (event.senderID !== allowedUID) {
-      return api.sendMessage("🚫 Tu n’as pas la permission d’utiliser cette commande.", event.threadID, event.messageID);
-    }
+  onStart: async function ({ api, event }) {
+    const allowedUID = "61566160637367"; // ton UID ici
 
-    const count = parseInt(args[0]);
-    if (isNaN(count) || count <= 0) return api.sendMessage("❓ Tu dois indiquer combien de messages supprimer (ex : clear 10)", event.threadID, event.messageID);
+    if (event.senderID !== allowedUID)
+      return api.sendMessage("⛔ Commande réservée à l’admin.", event.threadID, event.messageID);
 
     try {
-      const messages = await api.getThreadHistory(event.threadID, count + 1); // +1 pour inclure la commande
-      const msgIDs = messages.map(m => m.messageID);
-      await api.deleteMessages(msgIDs);
-      api.sendMessage(`🧹 ${count} message(s) supprimé(s).`, event.threadID);
-    } catch (err) {
-      api.sendMessage("❌ Erreur lors de la suppression.", event.threadID);
+      const botID = api.getCurrentUserID();
+
+      // Récupérer les 100 derniers messages pour limiter (API souvent limitée)
+      const messages = await api.getThreadHistory(event.threadID, 100, event.messageID);
+
+      // Filtrer les messages du bot
+      const botMessages = messages.filter(m => m.senderID === botID);
+
+      if (botMessages.length === 0)
+        return api.sendMessage("❌ Aucun message du bot trouvé à supprimer.", event.threadID, event.messageID);
+
+      // Supprimer tous les messages du bot trouvés
+      const messageIDs = botMessages.map(m => m.messageID);
+      await api.unsendMessages(messageIDs);
+
+      api.sendMessage(`✅ ${messageIDs.length} messages du bot supprimés !`, event.threadID);
+    } catch (error) {
+      console.error(error);
+      api.sendMessage("❌ Impossible de supprimer les messages du bot.", event.threadID, event.messageID);
     }
   }
 };
