@@ -1,4 +1,4 @@
-uptime.js module.exports = {
+module.exports = {
   config: {
     name: "uptime",
     aliases: [".uptime"],
