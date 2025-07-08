@@ -1,0 +1,24 @@
+const fs = require("fs-extra");
+const path = require("path");
+const stopFile = path.join(__dirname, "..", "cache", "stop-mode.json");
+
+module.exports = async function ({ event }) {
+  const isAdmin = event.senderID === global.GoatBot.config.adminBot[0];
+
+  if (!fs.existsSync(stopFile)) return;
+
+  const { stopUntil } = JSON.parse(fs.readFileSync(stopFile));
+  const now = Date.now();
+
+  if (now > stopUntil) {
+    fs.unlinkSync(stopFile);
+    return;
+  }
+
+  if (!isAdmin) {
+    return {
+      reaction: "⏳",
+      message: "Le bot est temporairement en pause. Merci de patienter."
+    };
+  }
+};
