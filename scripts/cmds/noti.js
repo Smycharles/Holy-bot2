@@ -1,57 +1,52 @@
 module.exports = {
   config: {
     name: "noti",
+    aliases: ["notif", "broadcast", "global"],
     version: "1.0",
-    author: "Samy x GPT",
-    role: 0,
-    shortDescription: "💌 Envoie un message stylé à tous les groupes",
-    category: "admin",
-    guide: {
-      en: ".noti <message>"
-    }
+    author: "SamyCharlesღ",
+    countDown: 10,
+    role: 2, // Owner uniquement
+    description: {
+      fr: "📢 Envoie un message dans tous les groupes où le bot est présent"
+    },
+    category: "🔐 admin"
   },
 
-  onStart: async function ({ api, event, args }) {
-    const allowedUID = "61566160637367"; // Ton ID
-    if (event.senderID !== allowedUID)
-      return api.sendMessage("⛔ Commande réservée à l’admin.", event.threadID, event.messageID);
+  onStart: async function ({ message, args, threadsData, usersData, event }) {
+    const content = args.join(" ");
+    const uid = event.senderID;
 
-    const senderName = event.senderName || "Admin";
-    const messageText = args.join(" ");
-    if (!messageText)
-      return api.sendMessage("⚠️ Tu dois écrire un message après `.noti`.", event.threadID, event.messageID);
+    if (!content)
+      return message.reply("❗ Utilisation : .noti <ton message>");
 
-    try {
-      const allThreads = await api.getThreadList(100, null, ["INBOX"]);
-      const groupThreads = allThreads.filter(t => t.isGroup);
+    const senderName = await usersData.getName(uid);
+    const botName = "🎀 𝑺𝒂𝒎𝒚 𝑩𝒐𝒕 🎀";
 
-      const styledMsg = `
-╔═╗─────────────╔═╗
-║🕶️║ 𝓝𝓸𝓽𝓲𝓯𝓲𝓬𝓪𝓽𝓲𝓸𝓷 𝓷𝓮́𝓸𝓷 ║🕶️║
-╚═╝─────────────╚═╝
+    const msgToSend = `
+╭── ${botName} ──╮
+│ 💬 ${content}
+│ 😊 ${senderName}
+╰── 𖥻 Notification globale 💌 ──╯`;
 
-👑 De : ${senderName}  
-💬 Message :  
-『 ${messageText} 』
+    const allThreads = await threadsData.getAll();
+    let count = 0;
 
-╔═╗─────────────╔═╗
-║🕶️║ 𝓝𝓸𝓽𝓲𝓯𝓲𝓬𝓪𝓽𝓲𝓸𝓷 𝓷𝓮́𝓸𝓷 ║🕶️║
-╚═╝─────────────╚═╝
-`;
-
-      let successCount = 0;
-      for (const thread of groupThreads) {
-        try {
-          await api.sendMessage(styledMsg, thread.threadID);
-          successCount++;
-        } catch {
-          // Échec, on ignore pour continuer
-        }
+    for (const thread of allThreads) {
+      try {
+        await message.send(
+          {
+            body: msgToSend,
+            mentions: [{ tag: senderName, id: uid }]
+          },
+          thread.threadID
+        );
+        count++;
+      } catch (e) {
+        // Évite les groupes où le bot a été kické
+        continue;
       }
-
-      return api.sendMessage(`✅ Message envoyé dans ${successCount} groupe(s).`, event.threadID, event.messageID);
-    } catch (error) {
-      return api.sendMessage("❌ Une erreur est survenue lors de l’envoi.", event.threadID, event.messageID);
     }
+
+    return message.reply(`✅ Message envoyé dans **${count}** groupes.`);
   }
 };
