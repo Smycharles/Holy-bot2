@@ -1,42 +1,33 @@
 module.exports = {
   config: {
     name: "prefix",
-    aliases: ["prefix", "Prefix", "P", "p"],
-    version: "1.0",
+    aliases: ["prefix", "Prefix"],
+    version: "3.0",
     author: "SamyCharlesღ",
     countDown: 3,
     role: 0,
     description: {
-      fr: "Affiche le préfixe du bot même sans le préfixe"
+      fr: "Répond avec une image aléatoire quand on tape prefix"
     },
-    category: "informations"
+    category: "info"
   },
 
-  onStart: async function ({ message, event }) {
-    const prefix = global.GoatBot.config.prefix || ".";
-    const botName = global.GoatBot.config.botName || "𝑺𝒂𝒎𝒚 𝑩𝒐𝒕 🧸";
-    const now = new Date();
-    const date = now.toLocaleDateString("fr-FR");
-    const time = now.toLocaleTimeString("fr-FR");
+  onStart: async function ({ message }) {
+    const images = [
+      "https://i.imgur.com/HjNHGw7.jpeg", // image 1 (le garçon animé)
+      "https://i.imgur.com/5ohE1Yo.jpeg"  // image 2 (stream is starting)
+    ];
 
-    const msg = `
-╭── 🎀 ${botName} 🎀 ──╮
-│ 💬 Préfixe actuel : 『 ${prefix} 』
-│ 📅 Date : ${date}
-│ ⏰ Heure : ${time}
-│ 🎀 Utilise ce préfixe pour m'appeler !
-╰── 𖥻 Merci de m’avoir invoqué 💌 ──╯`;
-
+    const chosenImage = images[Math.floor(Math.random() * images.length)];
     return message.reply({
-      body: msg,
-      mentions: [{ tag: event.senderID, id: event.senderID }]
+      attachment: await global.utils.getStreamFromURL(chosenImage)
     });
   },
 
   onChat: async function ({ event, message }) {
     const content = event.body?.toLowerCase()?.trim();
-    const keys = ["prefix", "p"];
-    if (keys.includes(content)) {
+    const triggers = ["prefix"];
+    if (triggers.includes(content)) {
       return this.onStart({ message, event });
     }
   }
